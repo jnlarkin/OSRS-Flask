@@ -1,0 +1,39 @@
+<!doctype html>
+{% extends 'base.html' %}
+
+{% block content %}
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Bootstrap demo</title>
+  </head>
+  <body>
+      <div class="container"  style="text-align:center">
+          <div class="row">
+              <div class="col">
+
+              </div>
+              <div class="col">
+
+                    <br>
+                    <h1>Sign Up</h1>
+                    <br>
+                    <form action="#" method="post">
+                        <h6>Username:</h6>
+                        <p><input type="text" name="username" /></p>
+                        <br>
+                        <h6>Password:</h6>
+                        <p><input type="password" name="password" /></p>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                    <a  style="padding:20px" class="nav-link active" aria-current="page" href="/signup">Sign up</a>
+              </div>
+              <div class="col">
+
+              </div>
+          </div>
+      </div>
+</body>
+</html>
+{% endblock %}

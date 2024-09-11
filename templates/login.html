@@ -9,15 +9,51 @@
     <title>Bootstrap demo</title>
   </head>
   <body>
-    <h1>Please Log In</h1>
+        {% with errors = get_flashed_messages(category_filter=["errors"]) %}
+                      {% if errors %}
+                        {% for message in errors %}
+                          <div style="text-align:center" class="alert alert-danger" role="alert">
+                              {{message}}
+                          </div>
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
 
-    <form action="#" method="post">
-        <h6>Username:</h6>
-        <p><input type="text" name="nm" /></p>
-        <h6>Email:</h6>
-        <p><input type="text" name="email" /></p>
-        <p><input type="submit" value="submit" /></p>
-    </form>
-  </body>
+                    {% with successes = get_flashed_messages(category_filter=["successes"]) %}
+                      {% if successes %}
+                        {% for message in successes %}
+                          <div style="text-align:center" class="alert alert-success" role="alert">
+                              {{message}}
+                          </div>
+                        {% endfor %}
+                      {% endif %}
+                    {% endwith %}
+      <div class="container"  style="text-align:center">
+          <div class="row">
+              <div class="col">
+
+              </div>
+              <div class="col">
+                    <br>
+                    <h1>Log In</h1>
+                    <br>
+                    <form action="#" method="post">
+                        <div>
+                            <h6>Username:</h6>
+                            <p><input type="text" name="username" /></p>
+                            <br>
+                            <h6>Password:</h6>
+                            <p><input type="password" name="password" /></p>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                    <a  style="padding:20px" class="nav-link active" aria-current="page" href="/signup">Sign up</a>
+              </div>
+              <div class="col">
+
+              </div>
+          </div>
+      </div>
+</body>
 </html>
 {% endblock %}
