@@ -6,7 +6,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link rel="stylesheet" href="https://cdn.datatables.net/2.1.5/css/dataTables.dataTables.css" />
+      <link href="https://cdn.datatables.net/v/bs5/dt-2.1.6/b-3.1.2/b-colvis-3.1.2/sl-2.0.5/datatables.min.css" rel="stylesheet">
+
     <title>Osrs Items</title>
   </head>
   <body>
@@ -16,33 +17,50 @@
       <div class="col">
         Column
       </div>
-      <div class="col">
+      <div class="col-8">
           <table id="myTable" class="display">
             <thead>
                 <tr>
-                    <th>Column 1</th>
-                    <th>Column 2</th>
+                    <th style="text-align: center"> ID </th>
+                    <th style="text-align: center"> Name </th>
+                    <th style="text-align: center"> Buy Limit </th>
+                    <th style="text-align: center"> High Alch </th>
+                    <th style="text-align: center"> High Price </th>
+                    <th style="text-align: center"> Low Price </th>
+                    <th style="text-align: center"> Margin </th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Row 1 Data 1</td>
-                    <td>Row 1 Data 2</td>
-                </tr>
-                <tr>
-                    <td>Row 2 Data 1</td>
-                    <td>Row 2 Data 2</td>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Buy Limit</th>
+                    <th>High Alch</th>
+                    <th>High Price</th>
+                    <th>Low Price</th>
+                    <th>Margin</th>
                 </tr>
             </tbody>
           </table>
 
           <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
           <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.js"></script>
-          <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/dataTables.bootstrap5.js"></script>
+          <script src="https://cdn.datatables.net/v/bs5/dt-2.1.6/b-3.1.2/b-colvis-3.1.2/sl-2.0.5/datatables.min.js"></script>
 
           <script>
                 $(document).ready(function () {
-                  $('#myTable').DataTable();
+                  $('#myTable').DataTable({
+                      ajax: '/api/data',
+                      columns: [
+                          {data: 'id'},
+                          {data: 'name', searchable: false},
+                          {data: 'buy_limit', orderable: false, searchable: false},
+                          {data: 'high_alchemy', orderable: false, searchable: false},
+                          {data: 'high'},
+                          {data: 'low'},
+                          {data: 'margin'}
+                      ],
+                  });
                 });
           </script>
 
