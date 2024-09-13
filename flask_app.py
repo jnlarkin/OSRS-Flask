@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, url_for, redirect, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime, timedelta
 import requests
 import json
 
@@ -54,7 +55,25 @@ class Items(db.Model):
             'margin': self.margin
         }
 
-@scheduler.scheduled_job('interval', seconds=10)
+class PriceHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
+    high = db.Column(db.Integer)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, item_id, high):
+        self.item_id = item_id
+        self.high = high
+
+
+@app.before_request
+def initialize_scheduler():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=delete_old_price_history, trigger="interval", minutes=5)
+    scheduler.add_job(func=refresh_prices(), trigger="interval", minutes=1)# Run every 5 minutes
+    scheduler.start()
+
+
 def refresh_items():
     print("refreshing items")
     url = 'https://prices.runescape.wiki/api/v1/osrs/mapping'
@@ -83,14 +102,19 @@ def refresh_items():
                 db.session.add(add_item)
                 db.session.commit()
 
+    refresh_prices()
+
     items = Items.query.all()
     for i in items:
-        found_id = Items.query.filter_by(id=i.id).first()
-        if found_id.high == 0 and found_id.low == 0:
-            db.session.delete(found_id)
+        found_id_delete = Items.query.filter_by(id=i.id).first()
+        if found_id_delete.high == 0 and found_id_delete.low == 0:
+            db.session.delete(found_id_delete)
             db.session.commit()
 
     print('items refreshed')
+
+def price_drop_check():
+        pass
 
 def refresh_prices():
     print('Refreshing prices')
@@ -107,17 +131,32 @@ def refresh_prices():
     for i in price_json:
         high = price_json[i]['low']
         low = price_json[i]['high']
-        found_id = Items.query.filter_by(id=i).first()
-        if found_id:
-            found_id.high = high
-            found_id.low = low
+        found_id_items = Items.query.filter_by(id=i).first()
+        if found_id_items:
+            found_id_items.high = high
+            found_id_items.low = low
             if high != 0 and low != 0:
-                found_id.margin = high-low
+                found_id_items.margin = high-low
             else:
-                found_id.margin = 1
+                found_id_items.margin = 1
             db.session.commit()
 
+        new_price_history = PriceHistory(item_id=i, high=high)
+        db.session.add(new_price_history)
+        db.session.commit()
+
     print('Prices Refreshed')
+
+
+def delete_old_price_history():
+    cutoff_time = datetime.utcnow() - timedelta(minutes=5)
+    old_records = PriceHistory.query.filter(PriceHistory.timestamp < cutoff_time).all()
+
+    for record in old_records:
+        db.session.delete(record)
+    db.session.commit()
+    print(f"Deleted {len(old_records)} records older than 5 minutes.")
+
 
 @app.route("/")
 def hello_world():

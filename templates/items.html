@@ -15,9 +15,8 @@
   <div class="container text-center">
     <div class="row">
       <div class="col">
-        Column
       </div>
-      <div class="col-8">
+      <div class="col-8" style="border-style:ridge; border-color: gray; border-width: 7px">
           <table id="myTable" class="display">
             <thead>
                 <tr>
@@ -49,17 +48,25 @@
 
           <script>
                 $(document).ready(function () {
-                  $('#myTable').DataTable({
+                  var table = $('#myTable').DataTable({
                       ajax: '/api/data',
+                      pageLength: 25,
+                      order: [[6, 'desc']],
                       columns: [
                           {data: 'id'},
-                          {data: 'name', searchable: false},
-                          {data: 'buy_limit', orderable: false, searchable: false},
-                          {data: 'high_alchemy', orderable: false, searchable: false},
-                          {data: 'high'},
-                          {data: 'low'},
-                          {data: 'margin'}
-                      ],
+                          {data: 'name'},
+                          {data: 'buy_limit', searchable: false, 'render': ['number', ',', '.', 0]},
+                          {data: 'high_alchemy', searchable: false, 'render': ['number', ',', '.', 0]},
+                          {data: 'high', 'render': ['number', ',', '.', 0]},
+                          {data: 'low', 'render': ['number', ',', '.', 0]},
+                          {
+                            data: 'margin',
+                            'render': function(data, type, row) {
+                                var color = data >= 0 ? 'green' : 'red';
+                                return '<span style="color:' + color + '">' + data.toLocaleString() + '</span>';
+                            }
+                          }
+                      ]
                   });
                 });
           </script>
@@ -67,7 +74,6 @@
 
       </div>
       <div class="col">
-        Column
       </div>
     </div>
   </div>
