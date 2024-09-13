@@ -13,9 +13,6 @@ app.secret_key = "123412hkasdjkas"
 
 db = SQLAlchemy(app)
 
-scheduler = BackgroundScheduler()
-
-
 
 class Users(db.Model):
     _id = db.Column("id", db.Integer, primary_key=True)
@@ -25,6 +22,7 @@ class Users(db.Model):
     def __init__(self, name, password):
         self.name = name
         self.password = password
+
 
 class Items(db.Model):
     id = db.Column("id", db.Integer, primary_key=True)
@@ -55,6 +53,7 @@ class Items(db.Model):
             'margin': self.margin
         }
 
+
 class PriceHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_id = db.Column(db.Integer, db.ForeignKey('items.id'), nullable=False)
@@ -64,14 +63,6 @@ class PriceHistory(db.Model):
     def __init__(self, item_id, high):
         self.item_id = item_id
         self.high = high
-
-
-@app.before_request
-def initialize_scheduler():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(func=delete_old_price_history, trigger="interval", minutes=5)
-    scheduler.add_job(func=refresh_prices(), trigger="interval", minutes=1)# Run every 5 minutes
-    scheduler.start()
 
 
 def refresh_items():
@@ -113,49 +104,53 @@ def refresh_items():
 
     print('items refreshed')
 
+
 def price_drop_check():
         pass
 
+
 def refresh_prices():
-    print('Refreshing prices')
-    url = 'https://prices.runescape.wiki/api/v1/osrs/latest'
+    with app.app_context():
+        print('Refreshing prices')
+        url = 'https://prices.runescape.wiki/api/v1/osrs/latest'
 
-    headers = {
-        'User-Agent': 'Price Drop Finder - @larkant on Discord',
-    }
+        headers = {
+            'User-Agent': 'Price Drop Finder - @larkant on Discord',
+        }
 
-    price_response = requests.get(url, headers=headers)
-    js = price_response.json()
-    price_json = js['data']
+        price_response = requests.get(url, headers=headers)
+        js = price_response.json()
+        price_json = js['data']
 
-    for i in price_json:
-        high = price_json[i]['low']
-        low = price_json[i]['high']
-        found_id_items = Items.query.filter_by(id=i).first()
-        if found_id_items:
-            found_id_items.high = high
-            found_id_items.low = low
-            if high != 0 and low != 0:
-                found_id_items.margin = high-low
-            else:
-                found_id_items.margin = 1
+        for i in price_json:
+            high = price_json[i]['low']
+            low = price_json[i]['high']
+            found_id_items = Items.query.filter_by(id=i).first()
+            if found_id_items:
+                found_id_items.high = high
+                found_id_items.low = low
+                if high != 0 and low != 0:
+                    found_id_items.margin = high-low
+                else:
+                    found_id_items.margin = 1
+                db.session.commit()
+
+            new_price_history = PriceHistory(item_id=i, high=high)
+            db.session.add(new_price_history)
             db.session.commit()
 
-        new_price_history = PriceHistory(item_id=i, high=high)
-        db.session.add(new_price_history)
-        db.session.commit()
-
-    print('Prices Refreshed')
+        print('Prices Refreshed')
 
 
 def delete_old_price_history():
-    cutoff_time = datetime.utcnow() - timedelta(minutes=5)
-    old_records = PriceHistory.query.filter(PriceHistory.timestamp < cutoff_time).all()
+    with app.app_context():
+        cutoff_time = datetime.utcnow() - timedelta(minutes=5)
+        old_records = PriceHistory.query.filter(PriceHistory.timestamp < cutoff_time).all()
 
-    for record in old_records:
-        db.session.delete(record)
-    db.session.commit()
-    print(f"Deleted {len(old_records)} records older than 5 minutes.")
+        for record in old_records:
+            db.session.delete(record)
+        db.session.commit()
+        print(f"Deleted {len(old_records)} records older than 5 minutes.")
 
 
 @app.route("/")
@@ -280,15 +275,21 @@ def view_db():
     return render_template('view_db.html', values=Users.query.all())
 
 
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=delete_old_price_history, trigger="interval", minutes=5)
+scheduler.add_job(func=refresh_prices, trigger="interval", minutes=1)  # Run every 5 minutes
+scheduler.start()
+
 
 if __name__ == "__main__":
     # Set this to true to refresh the items database with new OSRS items
     refresh_items_toggle = False
 
     with app.app_context():
+
         db.create_all()
         if refresh_items_toggle:
             refresh_items()
         refresh_prices()
-        app.run(debug=True)
+        app.run(debug=False)
 

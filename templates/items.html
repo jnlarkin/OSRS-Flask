@@ -68,7 +68,11 @@
                           }
                       ]
                   });
+                  setInterval(function () {
+                      table.ajax.reload(null, false); // false ensures the paging stays in place
+                        }, 30000); // 30 seconds
                 });
+
           </script>
 
 
